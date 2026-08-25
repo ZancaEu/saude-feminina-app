@@ -1,0 +1,56 @@
+.modal-content {
+  padding: 16px;
+}
+
+h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 16px 0 8px;
+}
+
+.symptoms-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.symptom-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  background: #fff;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  ion-icon {
+    font-size: 20px;
+    color: #8b5cf6;
+  }
+
+  &.selected {
+    border-color: #e94b6a;
+    background: #fce7ef;
+  }
+}
+
+ion-segment {
+  margin-bottom: 16px;
+}
+
+ion-textarea {
+  margin-bottom: 16px;
+}
+
+ion-button {
+  margin-top: 16px;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+}
