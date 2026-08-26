@@ -122,8 +122,17 @@ import { ConfirmDialogComponent, ConfirmDialogData } from '../shared/confirm-dia
       margin-bottom: 16px;
       flex-wrap: wrap;
     }
-    .full-width { width: 100%; }
-    h1 { margin: 0; }
+    .full-width {
+      width: 100%;
+      border-radius: 18px;
+      overflow: hidden;
+    }
+    h1 {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 700;
+      color: #1c1c1e;
+    }
     mat-form-field { min-width: 150px; }
     .status-chip {
       display: inline-block;
@@ -133,12 +142,12 @@ import { ConfirmDialogComponent, ConfirmDialogData } from '../shared/confirm-dia
       font-weight: 500;
     }
     .status-chip.published {
-      background-color: #c8e6c9;
-      color: #2e7d32;
+      background-color: #dff5e4;
+      color: #16a34a;
     }
     .status-chip.draft {
-      background-color: #fff3e0;
-      color: #e65100;
+      background-color: #fdebd2;
+      color: #d97706;
     }
   `]
 })
@@ -156,7 +165,7 @@ export class ArticleListComponent implements OnInit {
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
     private router: Router
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.loadArticles();

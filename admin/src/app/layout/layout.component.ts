@@ -20,11 +20,16 @@ import { MatIconModule } from '@angular/material/icon';
   template: `
     <div class="layout-container">
       <mat-toolbar color="primary" class="toolbar">
-        <span>Minha Saúde Feminina - Admin</span>
+        <mat-icon class="toolbar-logo">favorite</mat-icon>
+        <span class="toolbar-title">Minha Saúde Feminina</span>
+        <span class="toolbar-badge">Admin</span>
       </mat-toolbar>
 
       <mat-sidenav-container class="sidenav-container">
         <mat-sidenav mode="side" opened class="sidenav">
+          <div class="sidenav-header">
+            <p class="sidenav-subtitle">Gerenciamento de Conteúdo</p>
+          </div>
           <mat-nav-list>
             <a mat-list-item routerLink="/articles" routerLinkActive="active">
               <mat-icon matListItemIcon>article</mat-icon>
@@ -64,6 +69,28 @@ import { MatIconModule } from '@angular/material/icon';
       left: 0;
       right: 0;
       z-index: 2;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .toolbar-logo {
+      font-size: 22px;
+    }
+
+    .toolbar-title {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .toolbar-badge {
+      font-size: 11px;
+      background: rgba(255, 255, 255, 0.25);
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
     }
 
     .sidenav-container {
@@ -72,16 +99,33 @@ import { MatIconModule } from '@angular/material/icon';
     }
 
     .sidenav {
-      width: 250px;
+      width: 260px;
+      background: #ffffff;
+      border-right: 1px solid #f0f0f0;
+    }
+
+    .sidenav-header {
+      padding: 20px 16px 8px;
+    }
+
+    .sidenav-subtitle {
+      font-size: 12px;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+      margin: 0;
     }
 
     .content {
       padding: 24px;
+      background: #f5f6f7;
     }
 
     .active {
-      background-color: rgba(0, 0, 0, 0.04);
+      background-color: rgba(233, 75, 106, 0.08) !important;
+      border-radius: 12px;
     }
   `]
 })
-export class LayoutComponent {}
+export class LayoutComponent { }

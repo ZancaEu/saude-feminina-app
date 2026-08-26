@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
@@ -10,7 +10,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatCardModule } from '@angular/material/card';
-import { QuillModule } from 'ngx-quill';
+import { QuillModule, QuillEditorComponent } from 'ngx-quill';
 import { ArticleService } from '../services/article.service';
 import { CategoryService } from '../services/category.service';
 import { TagService } from '../services/tag.service';
@@ -53,14 +53,17 @@ import { LifePhase } from '../models/life-phase.model';
             <mat-error *ngIf="form.get('title')?.hasError('required')">Título é obrigatório</mat-error>
           </mat-form-field>
 
-          <div class="form-section">
+          <div class="form-section editor-section">
             <label class="section-label">Corpo do Artigo</label>
             <quill-editor
+              #editorComponent
               formControlName="body"
               [modules]="quillModules"
-              [styles]="{ height: '300px' }"
-              placeholder="Escreva o conteúdo do artigo...">
+              [styles]="{ height: '500px' }"
+              placeholder="Escreva o conteúdo do artigo..."
+              (onEditorCreated)="onEditorCreated($event)">
             </quill-editor>
+            <p class="editor-hint">Use a barra de ferramentas para inserir imagens e vídeos diretamente no conteúdo.</p>
           </div>
 
           <div class="form-row">
@@ -104,12 +107,17 @@ import { LifePhase } from '../models/life-phase.model';
           <div class="form-section">
             <label class="section-label">Imagem de Capa</label>
             <div class="image-upload">
-              <input type="file" #fileInput accept="image/*" (change)="onFileSelected($event)" hidden>
+              <input type="file" #fileInput accept="image/jpeg,image/png,image/webp,image/gif" (change)="onFileSelected($event)" hidden>
               <button mat-stroked-button type="button" (click)="fileInput.click()">
                 <mat-icon>upload</mat-icon> Selecionar Imagem
               </button>
               <span *ngIf="selectedFileName" class="file-name">{{ selectedFileName }}</span>
+              <button *ngIf="selectedFile" mat-icon-button type="button" (click)="removeSelectedImage()" aria-label="Remover imagem">
+                <mat-icon>close</mat-icon>
+              </button>
             </div>
+            <p class="upload-hint">Formatos aceitos: JPEG, PNG, WebP, GIF. Tamanho máximo: 2MB.</p>
+            <p *ngIf="imageError" class="image-error">{{ imageError }}</p>
             <div *ngIf="imagePreview" class="image-preview">
               <img [src]="imagePreview" alt="Preview da imagem de capa">
             </div>
@@ -118,7 +126,7 @@ import { LifePhase } from '../models/life-phase.model';
 
         <mat-card-actions align="end">
           <button mat-button type="button" (click)="goBack()">Cancelar</button>
-          <button mat-raised-button color="primary" type="submit" [disabled]="form.invalid || isSubmitting">
+          <button mat-raised-button color="primary" type="submit" [disabled]="form.invalid || isSubmitting || !!imageError">
             {{ isSubmitting ? 'Salvando...' : (isEditMode ? 'Atualizar' : 'Criar') }}
           </button>
         </mat-card-actions>
@@ -133,7 +141,7 @@ import { LifePhase } from '../models/life-phase.model';
       margin-bottom: 24px;
     }
     h1 { margin: 0; }
-    .article-form { max-width: 900px; }
+    .article-form { max-width: 1200px; width: 100%; margin-bottom: 48px; }
     .full-width { width: 100%; }
     .form-row {
       display: flex;
@@ -143,6 +151,44 @@ import { LifePhase } from '../models/life-phase.model';
     .form-row mat-form-field { flex: 1; }
     .form-section {
       margin-bottom: 24px;
+    }
+    .editor-section {
+      margin-bottom: 32px;
+    }
+    .editor-section quill-editor {
+      display: block;
+      width: 100%;
+    }
+    :host ::ng-deep .ql-container {
+      min-height: 500px;
+      font-size: 16px;
+    }
+    :host ::ng-deep .ql-editor {
+      min-height: 500px;
+    }
+    :host ::ng-deep .ql-editor img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+      margin: 12px 0;
+    }
+    :host ::ng-deep .ql-editor iframe {
+      width: 100%;
+      min-height: 400px;
+      border-radius: 8px;
+      margin: 12px 0;
+    }
+    :host ::ng-deep .ql-toolbar {
+      border-radius: 8px 8px 0 0;
+      background: #fafafa;
+    }
+    :host ::ng-deep .ql-container {
+      border-radius: 0 0 8px 8px;
+    }
+    .editor-hint {
+      font-size: 12px;
+      color: rgba(0, 0, 0, 0.5);
+      margin-top: 8px;
     }
     .section-label {
       display: block;
@@ -164,6 +210,16 @@ import { LifePhase } from '../models/life-phase.model';
       font-size: 14px;
       color: rgba(0, 0, 0, 0.6);
     }
+    .upload-hint {
+      font-size: 12px;
+      color: rgba(0, 0, 0, 0.5);
+      margin-top: 6px;
+    }
+    .image-error {
+      font-size: 13px;
+      color: #d32f2f;
+      margin-top: 6px;
+    }
     .image-preview {
       margin-top: 12px;
     }
@@ -175,10 +231,13 @@ import { LifePhase } from '../models/life-phase.model';
     }
     mat-card-actions {
       padding: 16px !important;
+      margin-bottom: 32px;
     }
   `]
 })
 export class ArticleFormComponent implements OnInit {
+  @ViewChild('editorComponent') editorComponent!: QuillEditorComponent;
+
   form!: FormGroup;
   isEditMode = false;
   isSubmitting = false;
@@ -189,16 +248,30 @@ export class ArticleFormComponent implements OnInit {
   selectedFile: File | null = null;
   selectedFileName = '';
   imagePreview: string | null = null;
+  imageError: string | null = null;
+
+  private readonly MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+  private readonly ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
   quillModules = {
-    toolbar: [
-      ['bold', 'italic', 'underline', 'strike'],
-      [{ 'header': [1, 2, 3, false] }],
-      [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-      ['link'],
-      ['clean']
-    ]
+    toolbar: {
+      container: [
+        ['bold', 'italic', 'underline', 'strike'],
+        [{ 'header': [1, 2, 3, false] }],
+        [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+        [{ 'align': [] }],
+        ['blockquote'],
+        ['link', 'image', 'video'],
+        ['clean']
+      ],
+      handlers: {
+        'image': () => this.insertImage(),
+        'video': () => this.insertVideo()
+      }
+    }
   };
+
+  private quillEditor: any;
 
   constructor(
     private fb: FormBuilder,
@@ -209,7 +282,7 @@ export class ArticleFormComponent implements OnInit {
     private tagService: TagService,
     private lifePhaseService: LifePhaseService,
     private snackBar: MatSnackBar
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.initForm();
@@ -221,6 +294,75 @@ export class ArticleFormComponent implements OnInit {
       this.articleId = +id;
       this.loadArticle(this.articleId);
     }
+  }
+
+  onEditorCreated(editor: any): void {
+    this.quillEditor = editor;
+  }
+
+  insertImage(): void {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/jpeg,image/png,image/webp,image/gif';
+    input.onchange = () => {
+      const file = input.files?.[0];
+      if (!file) return;
+
+      if (!this.ALLOWED_TYPES.includes(file.type)) {
+        this.snackBar.open('Formato de imagem não suportado. Use JPEG, PNG, WebP ou GIF.', 'Fechar', { duration: 4000 });
+        return;
+      }
+
+      if (file.size > 5 * 1024 * 1024) {
+        this.snackBar.open('Imagem muito grande para inserir no corpo. Máximo: 5MB.', 'Fechar', { duration: 4000 });
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        const range = this.quillEditor.getSelection(true);
+        this.quillEditor.insertEmbed(range.index, 'image', reader.result);
+        this.quillEditor.setSelection(range.index + 1);
+      };
+      reader.readAsDataURL(file);
+    };
+    input.click();
+  }
+
+  insertVideo(): void {
+    const url = prompt('Insira o URL do vídeo (YouTube, Vimeo, etc.):');
+    if (!url) return;
+
+    const embedUrl = this.getVideoEmbedUrl(url);
+    if (!embedUrl) {
+      this.snackBar.open('URL de vídeo não reconhecido. Use links do YouTube ou Vimeo.', 'Fechar', { duration: 4000 });
+      return;
+    }
+
+    const range = this.quillEditor.getSelection(true);
+    this.quillEditor.insertEmbed(range.index, 'video', embedUrl);
+    this.quillEditor.setSelection(range.index + 1);
+  }
+
+  private getVideoEmbedUrl(url: string): string | null {
+    // YouTube
+    const youtubeMatch = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+    if (youtubeMatch) {
+      return `https://www.youtube.com/embed/${youtubeMatch[1]}`;
+    }
+
+    // Vimeo
+    const vimeoMatch = url.match(/(?:vimeo\.com\/)(\d+)/);
+    if (vimeoMatch) {
+      return `https://player.vimeo.com/video/${vimeoMatch[1]}`;
+    }
+
+    // Se já for uma URL de embed, usar diretamente
+    if (url.includes('youtube.com/embed/') || url.includes('player.vimeo.com/video/')) {
+      return url;
+    }
+
+    return null;
   }
 
   private initForm(): void {
@@ -266,20 +408,50 @@ export class ArticleFormComponent implements OnInit {
 
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
+    this.imageError = null;
+
     if (input.files && input.files.length > 0) {
-      this.selectedFile = input.files[0];
-      this.selectedFileName = this.selectedFile.name;
+      const file = input.files[0];
+
+      // Validar tipo
+      if (!this.ALLOWED_TYPES.includes(file.type)) {
+        this.imageError = `Formato não suportado: "${file.type}". Use JPEG, PNG, WebP ou GIF.`;
+        this.selectedFile = null;
+        this.selectedFileName = '';
+        input.value = '';
+        return;
+      }
+
+      // Validar tamanho
+      if (file.size > this.MAX_FILE_SIZE) {
+        const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+        this.imageError = `Arquivo muito grande (${sizeMB}MB). O tamanho máximo é 2MB.`;
+        this.selectedFile = null;
+        this.selectedFileName = '';
+        input.value = '';
+        return;
+      }
+
+      this.selectedFile = file;
+      this.selectedFileName = file.name;
 
       const reader = new FileReader();
       reader.onload = () => {
         this.imagePreview = reader.result as string;
       };
-      reader.readAsDataURL(this.selectedFile);
+      reader.readAsDataURL(file);
     }
   }
 
+  removeSelectedImage(): void {
+    this.selectedFile = null;
+    this.selectedFileName = '';
+    this.imagePreview = null;
+    this.imageError = null;
+  }
+
   onSubmit(): void {
-    if (this.form.invalid || this.isSubmitting) {
+    if (this.form.invalid || this.isSubmitting || this.imageError) {
       return;
     }
 
@@ -301,9 +473,13 @@ export class ArticleFormComponent implements OnInit {
         if (err.status === 422 && err.error?.errors) {
           const errors = err.error.errors;
           Object.keys(errors).forEach(key => {
-            const control = this.form.get(key);
-            if (control) {
-              control.setErrors({ serverError: errors[key][0] });
+            if (key === 'cover_image') {
+              this.imageError = errors[key][0];
+            } else {
+              const control = this.form.get(key);
+              if (control) {
+                control.setErrors({ serverError: errors[key][0] });
+              }
             }
           });
           this.snackBar.open('Corrija os erros no formulário', 'Fechar', { duration: 3000 });
@@ -339,7 +515,7 @@ export class ArticleFormComponent implements OnInit {
     }
 
     if (this.selectedFile) {
-      formData.append('cover_image', this.selectedFile);
+      formData.append('cover_image', this.selectedFile, this.selectedFile.name);
     }
 
     return formData;

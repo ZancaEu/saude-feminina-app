@@ -63,8 +63,17 @@ import { ConfirmDialogComponent, ConfirmDialogData } from '../shared/confirm-dia
       align-items: center;
       margin-bottom: 24px;
     }
-    .full-width { width: 100%; }
-    h1 { margin: 0; }
+    .full-width {
+      width: 100%;
+      border-radius: 18px;
+      overflow: hidden;
+    }
+    h1 {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 700;
+      color: #1c1c1e;
+    }
   `]
 })
 export class CategoryListComponent implements OnInit {
@@ -75,7 +84,7 @@ export class CategoryListComponent implements OnInit {
     private categoryService: CategoryService,
     private dialog: MatDialog,
     private snackBar: MatSnackBar
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.loadCategories();
