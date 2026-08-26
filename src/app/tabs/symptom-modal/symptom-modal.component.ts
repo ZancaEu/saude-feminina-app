@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { ModalController, ToastController } from '@ionic/angular';
 import { SymptomService } from '../../services/symptom.service';
+import { CalendarEventService } from '../../services/calendar-event.service';
 import { Symptom } from '../../models/symptom.model';
 
 @Component({
@@ -20,8 +21,9 @@ export class SymptomModalComponent implements OnInit {
   constructor(
     private modalCtrl: ModalController,
     private symptomService: SymptomService,
+    private calendarEventService: CalendarEventService,
     private toastCtrl: ToastController
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.loadSymptoms();
@@ -61,6 +63,15 @@ export class SymptomModalComponent implements OnInit {
       notes: this.notes || undefined
     }).subscribe({
       next: () => {
+        // Also create a calendar event so it appears in the calendar
+        const symptomName = this.symptoms.find(s => s.id === this.selectedSymptomId)?.name || 'Sintoma';
+        this.calendarEventService.createEvent({
+          event_date: today,
+          type: 'note',
+          title: `Sintoma: ${symptomName}`,
+          description: this.notes || undefined,
+        }).subscribe(); // fire-and-forget, don't block dismissal
+
         this.isSubmitting = false;
         this.showToast('Sintoma registrado com sucesso');
         this.modalCtrl.dismiss({ success: true });

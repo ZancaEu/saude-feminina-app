@@ -1,6 +1,7 @@
-<?php
+﻿<?php
 
 use App\Http\Controllers\ArticleController;
+use App\Http\Controllers\CalendarEventController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\MenstrualCycleController;
 use App\Http\Controllers\TagController;
@@ -37,3 +38,10 @@ Route::get('predictions', [PredictionController::class, 'index']);
 
 Route::get('symptoms', [SymptomController::class, 'index']);
 Route::apiResource('symptom-logs', SymptomLogController::class)->except(['show']);
+
+// Calendar Events - custom routes BEFORE apiResource to avoid route model binding conflicts
+Route::post('calendar-events/toggle-menstruation', [CalendarEventController::class, 'toggleMenstruation']);
+Route::get('calendar-events-reminders/upcoming', [CalendarEventController::class, 'upcomingReminders']);
+Route::apiResource('calendar-events', CalendarEventController::class)->parameters([
+    'calendar-events' => 'calendarEvent'
+]);

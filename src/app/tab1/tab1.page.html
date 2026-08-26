@@ -54,6 +54,24 @@
       </ion-card>
     </div>
 
+    <!-- Upcoming Reminders -->
+    <div *ngIf="upcomingReminders.length > 0">
+      <h3 class="section-title">Próximos lembretes</h3>
+      <ion-list class="custom-list">
+        <ion-item class="custom-item" *ngFor="let reminder of upcomingReminders">
+          <div slot="start" class="icon blue">
+            <ion-icon name="alarm-outline"></ion-icon>
+          </div>
+          <ion-label>
+            <h2>{{ reminder.title }}</h2>
+            <p>{{ formatReminderDate(reminder.event_date) }}<span *ngIf="reminder.time"> &bull; {{ reminder.time
+                }}</span></p>
+            <p *ngIf="reminder.description" class="reminder-desc">{{ reminder.description }}</p>
+          </ion-label>
+        </ion-item>
+      </ion-list>
+    </div>
+
     <!-- Recent Symptoms -->
     <h3 class="section-title">Registros recentes</h3>
 
@@ -82,7 +100,7 @@
         </div>
         <div>
           <h3>Dica</h3>
-          <p>{{ predictions.message }}</p>
+          <p>{{ predictions?.message }}</p>
         </div>
       </ion-card-content>
     </ion-card>

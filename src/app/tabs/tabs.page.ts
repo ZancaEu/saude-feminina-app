@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { ModalController, ToastController } from '@ionic/angular';
-import { CycleService } from '../services/cycle.service';
+import { CalendarEventService } from '../services/calendar-event.service';
 import { SymptomModalComponent } from './symptom-modal/symptom-modal.component';
 
 @Component({
@@ -15,7 +15,7 @@ export class TabsPage {
   constructor(
     private modalCtrl: ModalController,
     private toastCtrl: ToastController,
-    private cycleService: CycleService
+    private calendarEventService: CalendarEventService
   ) { }
 
   toggleFab() {
@@ -26,29 +26,14 @@ export class TabsPage {
     this.isOpen = false;
     const today = new Date().toISOString().split('T')[0];
 
-    this.cycleService.getCycles().subscribe({
-      next: (cycles) => {
-        const activeCycle = cycles.find(c => c.end_date === null);
-
-        if (activeCycle) {
-          this.cycleService.updateCycle(activeCycle.id, today).subscribe({
-            next: () => this.showToast('Ciclo encerrado com sucesso'),
-            error: (err) => {
-              const msg = err.error?.message || 'Erro ao encerrar ciclo';
-              this.showToast(msg);
-            }
-          });
-        } else {
-          this.cycleService.createCycle(today).subscribe({
-            next: () => this.showToast('Ciclo iniciado com sucesso'),
-            error: (err) => {
-              const msg = err.error?.errors?.start_date?.[0] || err.error?.message || 'Erro ao iniciar ciclo';
-              this.showToast(msg);
-            }
-          });
-        }
+    this.calendarEventService.toggleMenstruation(today).subscribe({
+      next: (res: any) => {
+        const msg = res.action === 'removed'
+          ? 'Menstruação removida para hoje'
+          : 'Menstruação marcada para hoje';
+        this.showToast(msg);
       },
-      error: () => this.showToast('Erro de conexão com o servidor')
+      error: () => this.showToast('Erro ao registrar menstruação')
     });
   }
 

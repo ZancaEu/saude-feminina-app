@@ -1,8 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 import { CycleService } from '../services/cycle.service';
 import { SymptomService } from '../services/symptom.service';
+import { CalendarEventService } from '../services/calendar-event.service';
 import { CyclePrediction } from '../models/prediction.model';
 import { SymptomLog } from '../models/symptom.model';
+import { CalendarEvent } from '../models/calendar-event.model';
 
 @Component({
   selector: 'app-tab1',
@@ -13,6 +15,7 @@ import { SymptomLog } from '../models/symptom.model';
 export class Tab1Page implements OnInit {
   predictions: CyclePrediction | null = null;
   recentSymptoms: SymptomLog[] = [];
+  upcomingReminders: CalendarEvent[] = [];
   isLoading = true;
   today: string = '';
   daysUntilNext: number | null = null;
@@ -21,7 +24,8 @@ export class Tab1Page implements OnInit {
 
   constructor(
     private cycleService: CycleService,
-    private symptomService: SymptomService
+    private symptomService: SymptomService,
+    private calendarEventService: CalendarEventService
   ) { }
 
   ngOnInit(): void {
@@ -36,7 +40,7 @@ export class Tab1Page implements OnInit {
   loadData(): void {
     this.isLoading = true;
     this.cycleService.getPredictions().subscribe({
-      next: (predictions) => {
+      next: (predictions: CyclePrediction) => {
         this.predictions = predictions;
         this.calculateDays();
         this.phaseDescription = this.getPhaseDescription(predictions.current_phase);
@@ -51,8 +55,13 @@ export class Tab1Page implements OnInit {
     const endDate = new Date().toISOString().split('T')[0];
     const startDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
     this.symptomService.getSymptomLogs(startDate, endDate).subscribe({
-      next: (logs) => this.recentSymptoms = logs.slice(0, 5),
+      next: (logs: SymptomLog[]) => this.recentSymptoms = logs.slice(0, 5),
       error: () => this.recentSymptoms = []
+    });
+
+    this.calendarEventService.getUpcomingReminders().subscribe({
+      next: (reminders: CalendarEvent[]) => this.upcomingReminders = reminders,
+      error: () => this.upcomingReminders = []
     });
   }
 
@@ -103,5 +112,17 @@ export class Tab1Page implements OnInit {
       case 'intenso': return 'Intenso';
       default: return intensity;
     }
+  }
+
+  formatReminderDate(dateStr: string): string {
+    const date = new Date(dateStr + 'T12:00:00');
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const diff = Math.ceil((date.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+    if (diff === 0) return 'Hoje';
+    if (diff === 1) return 'Amanhã';
+    if (diff <= 7) return `Em ${diff} dias`;
+    return date.toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' });
   }
 }

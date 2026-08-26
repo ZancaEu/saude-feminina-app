@@ -21,12 +21,16 @@
         </div>
 
         <div class="calendar-grid">
-          <span *ngFor="let dayObj of calendarDays" [class.has-day]="dayObj.day" (click)="onDayTap(dayObj)">
-            {{ dayObj.day }}
-            <div class="dot" *ngIf="dayObj.type" [class.pink]="dayObj.type === 'menstruation'"
-              [class.orange]="dayObj.type === 'fertile'" [class.green]="dayObj.type === 'ovulation'">
+          <div *ngFor="let dayObj of calendarDays" class="day-cell" [class.has-day]="dayObj.day"
+            [class.is-today]="dayObj.isToday" (click)="onDayTap(dayObj)">
+            <span class="day-number">{{ dayObj.day }}</span>
+            <div class="dots" *ngIf="dayObj.types.length > 0">
+              <div class="dot" *ngFor="let type of dayObj.types" [class.pink]="type === 'menstruation'"
+                [class.orange]="type === 'fertile'" [class.green]="type === 'ovulation'"
+                [class.blue]="type === 'reminder'" [class.purple]="type === 'note'">
+              </div>
             </div>
-          </span>
+          </div>
         </div>
 
         <div class="legend">
@@ -39,10 +43,16 @@
           <span>
             <div class="dot green"></div> Ovulação
           </span>
+          <span>
+            <div class="dot blue"></div> Lembrete
+          </span>
+          <span>
+            <div class="dot purple"></div> Anotação
+          </span>
         </div>
       </ion-card-content>
     </ion-card>
 
-    <p class="hint-text">Toque em um dia para registrar início ou fim do ciclo</p>
+    <p class="hint-text">Toque em um dia para adicionar eventos</p>
   </div>
 </ion-content>

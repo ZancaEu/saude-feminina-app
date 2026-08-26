@@ -18,6 +18,7 @@
         font-size: 20px;
         cursor: pointer;
         color: #e94b6a;
+        padding: 8px;
     }
 
     h3 {
@@ -27,43 +28,69 @@
     }
 }
 
-.week-days,
+.week-days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    text-align: center;
+    font-size: 12px;
+    color: #8e8e93;
+    margin-bottom: 4px;
+}
+
 .calendar-grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
     text-align: center;
 }
 
-.week-days {
-    font-size: 12px;
-    color: #8e8e93;
-    margin-bottom: 8px;
-}
-
-.calendar-grid span {
-    position: relative;
-    padding: 10px 0;
-    font-size: 14px;
+.day-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 8px 0;
+    min-height: 44px;
     cursor: pointer;
-    border-radius: 8px;
-    transition: background 0.2s;
+    border-radius: 10px;
+    transition: background 0.15s;
 
     &.has-day:active {
         background: #f3f4f6;
     }
+
+    &.is-today .day-number {
+        background: #e94b6a;
+        color: #ffffff;
+        border-radius: 50%;
+        width: 28px;
+        height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+    }
+
+    .day-number {
+        font-size: 14px;
+        color: #1c1c1e;
+        line-height: 28px;
+    }
+}
+
+.dots {
+    display: flex;
+    gap: 3px;
+    margin-top: 2px;
+    justify-content: center;
 }
 
 .dot {
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    position: absolute;
-    bottom: 4px;
-    left: 50%;
-    transform: translateX(-50%);
 
     &.pink {
-        background: #f4728a;
+        background: #e94b6a;
     }
 
     &.orange {
@@ -73,25 +100,28 @@
     &.green {
         background: #22c55e;
     }
+
+    &.blue {
+        background: #3b82f6;
+    }
+
+    &.purple {
+        background: #8b5cf6;
+    }
 }
 
 .legend {
     display: flex;
-    gap: 16px;
-    margin-top: 12px;
-    font-size: 13px;
+    gap: 12px;
+    margin-top: 14px;
+    font-size: 12px;
     color: #6b7280;
     flex-wrap: wrap;
 
     span {
         display: flex;
         align-items: center;
-        gap: 6px;
-    }
-
-    .dot {
-        position: static;
-        transform: none;
+        gap: 5px;
     }
 }
 

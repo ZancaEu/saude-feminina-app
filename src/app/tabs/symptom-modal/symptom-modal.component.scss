@@ -39,6 +39,15 @@ h3 {
 
 ion-segment {
   margin-bottom: 16px;
+
+  ion-segment-button {
+    --color: #6b7280;
+    --color-checked: #ffffff;
+    --background-checked: #e94b6a;
+    --indicator-color: #e94b6a;
+    font-weight: 500;
+    font-size: 14px;
+  }
 }
 
 ion-textarea {

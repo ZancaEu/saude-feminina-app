@@ -1,8 +1,17 @@
 import { Component, OnInit } from '@angular/core';
-import { ToastController } from '@ionic/angular';
+import { ModalController, ToastController } from '@ionic/angular';
 import { CycleService } from '../services/cycle.service';
-import { MenstrualCycle } from '../models/cycle.model';
+import { CalendarEventService } from '../services/calendar-event.service';
+import { CalendarEvent } from '../models/calendar-event.model';
 import { CyclePrediction } from '../models/prediction.model';
+import { DayModalComponent } from './day-modal/day-modal.component';
+
+interface CalendarDay {
+  day: number | null;
+  date: string;
+  types: string[];
+  isToday: boolean;
+}
 
 @Component({
   selector: 'app-tab2',
@@ -14,15 +23,17 @@ export class Tab2Page implements OnInit {
   currentDate = new Date();
   currentYear: number;
   currentMonth: number;
-  monthName: string = '';
+  monthName = '';
   weekDays = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'];
-  calendarDays: any[] = [];
-  cycles: MenstrualCycle[] = [];
+  calendarDays: CalendarDay[] = [];
   predictions: CyclePrediction | null = null;
+  events: CalendarEvent[] = [];
   isLoading = true;
 
   constructor(
     private cycleService: CycleService,
+    private calendarEventService: CalendarEventService,
+    private modalCtrl: ModalController,
     private toastCtrl: ToastController
   ) {
     this.currentYear = this.currentDate.getFullYear();
@@ -39,9 +50,16 @@ export class Tab2Page implements OnInit {
 
   loadData(): void {
     this.isLoading = true;
-    this.cycleService.getCycles().subscribe({
-      next: (cycles) => {
-        this.cycles = cycles;
+
+    const startDate = this.formatDate(this.currentYear, this.currentMonth + 1, 1);
+    const daysInMonth = new Date(this.currentYear, this.currentMonth + 1, 0).getDate();
+    const endDate = this.formatDate(this.currentYear, this.currentMonth + 1, daysInMonth);
+
+    // Load calendar events for this month
+    this.calendarEventService.getEvents(startDate, endDate).subscribe({
+      next: (events) => {
+        this.events = events;
+        // Load predictions
         this.cycleService.getPredictions().subscribe({
           next: (predictions) => {
             this.predictions = predictions;
@@ -49,14 +67,17 @@ export class Tab2Page implements OnInit {
             this.isLoading = false;
           },
           error: () => {
+            this.predictions = null;
             this.buildCalendar();
             this.isLoading = false;
           }
         });
       },
       error: () => {
+        this.events = [];
+        this.buildCalendar();
         this.isLoading = false;
-        this.showToast('Erro ao carregar dados do ciclo');
+        this.showToast('Erro ao carregar dados');
       }
     });
   }
@@ -67,7 +88,7 @@ export class Tab2Page implements OnInit {
       this.currentMonth = 11;
       this.currentYear--;
     }
-    this.buildCalendar();
+    this.loadData();
   }
 
   nextMonth(): void {
@@ -76,7 +97,7 @@ export class Tab2Page implements OnInit {
       this.currentMonth = 0;
       this.currentYear++;
     }
-    this.buildCalendar();
+    this.loadData();
   }
 
   buildCalendar(): void {
@@ -86,33 +107,48 @@ export class Tab2Page implements OnInit {
 
     const firstDay = new Date(this.currentYear, this.currentMonth, 1).getDay();
     const daysInMonth = new Date(this.currentYear, this.currentMonth + 1, 0).getDate();
+    const today = new Date();
+    const todayStr = this.formatDate(today.getFullYear(), today.getMonth() + 1, today.getDate());
 
     this.calendarDays = [];
 
+    // Padding for first week
     for (let i = 0; i < firstDay; i++) {
-      this.calendarDays.push({ day: null, type: null });
+      this.calendarDays.push({ day: null, date: '', types: [], isToday: false });
     }
 
     for (let day = 1; day <= daysInMonth; day++) {
       const dateStr = this.formatDate(this.currentYear, this.currentMonth + 1, day);
-      const type = this.getDayType(dateStr);
-      this.calendarDays.push({ day, date: dateStr, type });
+      const types = this.getDayTypes(dateStr);
+      this.calendarDays.push({
+        day,
+        date: dateStr,
+        types,
+        isToday: dateStr === todayStr
+      });
     }
   }
 
-  getDayType(dateStr: string): string | null {
-    for (const cycle of this.cycles) {
-      const start = cycle.start_date;
-      const end = cycle.end_date;
-      if (dateStr >= start && (end === null || dateStr <= end)) {
-        return 'menstruation';
-      }
+  getDayTypes(dateStr: string): string[] {
+    const types: string[] = [];
+
+    // Check calendar events
+    const dayEvents = this.events.filter(e => e.event_date === dateStr);
+    if (dayEvents.some(e => e.type === 'menstruation')) {
+      types.push('menstruation');
+    }
+    if (dayEvents.some(e => e.type === 'reminder')) {
+      types.push('reminder');
+    }
+    if (dayEvents.some(e => e.type === 'note')) {
+      types.push('note');
     }
 
-    if (this.predictions) {
+    // Check predictions
+    if (this.predictions && !types.includes('menstruation')) {
       if (this.predictions.fertile_window_start && this.predictions.fertile_window_end) {
         if (dateStr >= this.predictions.fertile_window_start && dateStr <= this.predictions.fertile_window_end) {
-          return 'fertile';
+          types.push('fertile');
         }
       }
       if (this.predictions.fertile_window_end) {
@@ -120,46 +156,32 @@ export class Tab2Page implements OnInit {
         ovulationDate.setDate(ovulationDate.getDate() + 1);
         const ovStr = ovulationDate.toISOString().split('T')[0];
         if (dateStr === ovStr) {
-          return 'ovulation';
+          types.push('ovulation');
         }
       }
     }
 
-    return null;
+    return types;
   }
 
-  onDayTap(dayObj: any): void {
+  async onDayTap(dayObj: CalendarDay): Promise<void> {
     if (!dayObj.day) return;
 
-    const dateStr = dayObj.date;
-    const activeCycle = this.cycles.find(c => c.end_date === null);
+    const modal = await this.modalCtrl.create({
+      component: DayModalComponent,
+      componentProps: {
+        selectedDate: dayObj.date,
+        isMenstruationDay: dayObj.types.includes('menstruation')
+      },
+      breakpoints: [0, 0.6, 0.9],
+      initialBreakpoint: 0.6,
+    });
 
-    if (activeCycle) {
-      if (dateStr >= activeCycle.start_date) {
-        this.cycleService.updateCycle(activeCycle.id, dateStr).subscribe({
-          next: () => {
-            this.showToast('Ciclo encerrado com sucesso');
-            this.loadData();
-          },
-          error: (err) => {
-            const msg = err.error?.message || 'Erro ao encerrar ciclo';
-            this.showToast(msg);
-          }
-        });
-      } else {
-        this.showToast('A data de fim não pode ser anterior ao início');
-      }
-    } else {
-      this.cycleService.createCycle(dateStr).subscribe({
-        next: () => {
-          this.showToast('Ciclo iniciado com sucesso');
-          this.loadData();
-        },
-        error: (err) => {
-          const msg = err.error?.errors?.start_date?.[0] || err.error?.message || 'Erro ao iniciar ciclo';
-          this.showToast(msg);
-        }
-      });
+    await modal.present();
+
+    const { data } = await modal.onDidDismiss();
+    if (data?.changed) {
+      this.loadData();
     }
   }
 
