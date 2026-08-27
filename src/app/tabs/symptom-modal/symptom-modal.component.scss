@@ -23,6 +23,7 @@ h3 {
   border-radius: 12px;
   background: #fff;
   font-size: 13px;
+  color: #1c1c1e;
   cursor: pointer;
   transition: all 0.2s;
 
@@ -31,9 +32,17 @@ h3 {
     color: #8b5cf6;
   }
 
+  span {
+    color: #1c1c1e;
+  }
+
   &.selected {
     border-color: #e94b6a;
     background: #fce7ef;
+
+    span {
+      color: #1c1c1e;
+    }
   }
 }
 

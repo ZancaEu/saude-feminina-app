@@ -28,7 +28,9 @@
   }
 
   &.menstruation {
-    ion-icon { color: #e94b6a; }
+    ion-icon {
+      color: #e94b6a;
+    }
 
     &.active {
       background: #fce7ef;
@@ -37,11 +39,15 @@
   }
 
   &.reminder {
-    ion-icon { color: #3b82f6; }
+    ion-icon {
+      color: #3b82f6;
+    }
   }
 
   &.note {
-    ion-icon { color: #8b5cf6; }
+    ion-icon {
+      color: #8b5cf6;
+    }
   }
 
   &:active {
@@ -115,19 +121,37 @@
   &.menstruation {
     background: #fef2f5;
     border-color: #fce7ef;
-    .event-info ion-icon { color: #e94b6a; }
+
+    .event-info ion-icon {
+      color: #e94b6a;
+    }
   }
 
   &.reminder {
     background: #eff6ff;
     border-color: #dbeafe;
-    .event-info ion-icon { color: #3b82f6; }
+
+    .event-info ion-icon {
+      color: #3b82f6;
+    }
   }
 
   &.note {
     background: #f5f3ff;
     border-color: #ede9fe;
-    .event-info ion-icon { color: #8b5cf6; }
+
+    .event-info ion-icon {
+      color: #8b5cf6;
+    }
+  }
+
+  &.symptom {
+    background: #fef2f2;
+    border-color: #fecaca;
+
+    .event-info ion-icon {
+      color: #ef4444;
+    }
   }
 
   .event-type-label {

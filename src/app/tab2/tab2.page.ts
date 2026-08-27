@@ -2,7 +2,9 @@ import { Component, OnInit } from '@angular/core';
 import { ModalController, ToastController } from '@ionic/angular';
 import { CycleService } from '../services/cycle.service';
 import { CalendarEventService } from '../services/calendar-event.service';
+import { SymptomService } from '../services/symptom.service';
 import { CalendarEvent } from '../models/calendar-event.model';
+import { SymptomLog } from '../models/symptom.model';
 import { CyclePrediction } from '../models/prediction.model';
 import { DayModalComponent } from './day-modal/day-modal.component';
 
@@ -28,11 +30,14 @@ export class Tab2Page implements OnInit {
   calendarDays: CalendarDay[] = [];
   predictions: CyclePrediction | null = null;
   events: CalendarEvent[] = [];
+  symptomLogs: SymptomLog[] = [];
+  upcomingReminders: CalendarEvent[] = [];
   isLoading = true;
 
   constructor(
     private cycleService: CycleService,
     private calendarEventService: CalendarEventService,
+    private symptomService: SymptomService,
     private modalCtrl: ModalController,
     private toastCtrl: ToastController
   ) {
@@ -79,6 +84,21 @@ export class Tab2Page implements OnInit {
         this.isLoading = false;
         this.showToast('Erro ao carregar dados');
       }
+    });
+
+    // Load upcoming reminders
+    this.calendarEventService.getUpcomingReminders().subscribe({
+      next: (reminders) => this.upcomingReminders = reminders,
+      error: () => this.upcomingReminders = []
+    });
+
+    // Load symptom logs for this month
+    this.symptomService.getSymptomLogs(startDate, endDate).subscribe({
+      next: (logs) => {
+        this.symptomLogs = logs;
+        this.buildCalendar();
+      },
+      error: () => this.symptomLogs = []
     });
   }
 
@@ -144,6 +164,11 @@ export class Tab2Page implements OnInit {
       types.push('note');
     }
 
+    // Check symptom logs
+    if (this.symptomLogs.some(s => s.log_date === dateStr)) {
+      types.push('symptom');
+    }
+
     // Check predictions
     if (this.predictions && !types.includes('menstruation')) {
       if (this.predictions.fertile_window_start && this.predictions.fertile_window_end) {
@@ -187,6 +212,18 @@ export class Tab2Page implements OnInit {
 
   private formatDate(year: number, month: number, day: number): string {
     return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  }
+
+  formatReminderDate(dateStr: string): string {
+    const date = new Date(dateStr + 'T12:00:00');
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const diff = Math.ceil((date.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+    if (diff === 0) return 'Hoje';
+    if (diff === 1) return 'Amanhã';
+    if (diff <= 7) return `Em ${diff} dias`;
+    return date.toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' });
   }
 
   private async showToast(message: string): Promise<void> {

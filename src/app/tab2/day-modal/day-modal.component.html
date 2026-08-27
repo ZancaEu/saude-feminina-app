@@ -12,8 +12,8 @@
 
     <!-- Quick Actions -->
     <div class="quick-actions">
-      <button class="action-btn menstruation" [class.active]="isMenstruationDay"
-        (click)="toggleMenstruation()" [disabled]="isSubmitting">
+      <button class="action-btn menstruation" [class.active]="isMenstruationDay" (click)="toggleMenstruation()"
+        [disabled]="isSubmitting">
         <ion-icon name="water"></ion-icon>
         <span>{{ isMenstruationDay ? 'Remover Menstruação' : 'Marcar Menstruação' }}</span>
       </button>
@@ -72,7 +72,23 @@
       </div>
     </div>
 
-    <div *ngIf="!isLoading && eventsForDay.length === 0 && !showForm" class="empty-state">
+    <!-- Symptoms for this day -->
+    <div class="day-events" *ngIf="!isLoading && symptomLogsForDay.length > 0">
+      <h4>Sintomas registrados</h4>
+      <div *ngFor="let log of symptomLogsForDay" class="event-item symptom">
+        <div class="event-info">
+          <ion-icon [name]="log.symptom?.icon || 'fitness-outline'"></ion-icon>
+          <div>
+            <span class="event-type-label">{{ log.symptom?.name || 'Sintoma' }}</span>
+            <p class="event-title">{{ getIntensityLabel(log.intensity) }}</p>
+            <p class="event-desc" *ngIf="log.notes">{{ log.notes }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="!isLoading && eventsForDay.length === 0 && symptomLogsForDay.length === 0 && !showForm"
+      class="empty-state">
       <ion-icon name="calendar-outline"></ion-icon>
       <p>Nenhum evento neste dia.</p>
       <p class="hint">Use os botões acima para adicionar.</p>

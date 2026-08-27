@@ -1,7 +1,9 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { ModalController, ToastController } from '@ionic/angular';
 import { CalendarEventService } from '../../services/calendar-event.service';
+import { SymptomService } from '../../services/symptom.service';
 import { CalendarEvent, CalendarEventType } from '../../models/calendar-event.model';
+import { SymptomLog } from '../../models/symptom.model';
 
 @Component({
   selector: 'app-day-modal',
@@ -14,6 +16,7 @@ export class DayModalComponent implements OnInit {
   @Input() isMenstruationDay = false;
 
   eventsForDay: CalendarEvent[] = [];
+  symptomLogsForDay: SymptomLog[] = [];
   isLoading = true;
   isSubmitting = false;
 
@@ -27,8 +30,9 @@ export class DayModalComponent implements OnInit {
   constructor(
     private modalCtrl: ModalController,
     private calendarEventService: CalendarEventService,
+    private symptomService: SymptomService,
     private toastCtrl: ToastController
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.loadEventsForDay();
@@ -52,21 +56,42 @@ export class DayModalComponent implements OnInit {
         this.showToast('Erro ao carregar eventos');
       }
     });
+
+    // Carregar sintomas do dia
+    this.symptomService.getSymptomLogs(this.selectedDate, this.selectedDate).subscribe({
+      next: (logs) => this.symptomLogsForDay = logs,
+      error: () => this.symptomLogsForDay = []
+    });
   }
 
   toggleMenstruation(): void {
     this.isSubmitting = true;
     this.calendarEventService.toggleMenstruation(this.selectedDate).subscribe({
       next: (res) => {
-        this.isMenstruationDay = !this.isMenstruationDay;
+        // Define o estado com base na resposta do servidor (não otimista)
+        this.isMenstruationDay = res.action === 'created';
         this.isSubmitting = false;
         const msg = res.action === 'removed' ? 'Menstruação removida' : 'Menstruação marcada';
         this.showToast(msg);
-        this.loadEventsForDay();
+        // Recarrega a lista de eventos SEM sobrescrever isMenstruationDay
+        this.reloadEvents();
       },
       error: () => {
         this.isSubmitting = false;
         this.showToast('Erro ao atualizar menstruação');
+      }
+    });
+  }
+
+  private reloadEvents(): void {
+    this.calendarEventService.getEventsForDate(this.selectedDate).subscribe({
+      next: (events) => {
+        this.eventsForDay = events;
+        // Sincroniza o estado da menstruação com os dados reais do servidor
+        this.isMenstruationDay = events.some(e => e.type === 'menstruation');
+      },
+      error: () => {
+        // Silencioso - o estado do toggle já foi definido pela resposta do toggleMenstruation
       }
     });
   }
@@ -135,6 +160,15 @@ export class DayModalComponent implements OnInit {
       case 'reminder': return 'Lembrete';
       case 'note': return 'Anotação';
       default: return type;
+    }
+  }
+
+  getIntensityLabel(intensity: string): string {
+    switch (intensity) {
+      case 'leve': return 'Leve';
+      case 'moderado': return 'Moderado';
+      case 'intenso': return 'Intenso';
+      default: return intensity;
     }
   }
 

@@ -27,7 +27,7 @@
             <div class="dots" *ngIf="dayObj.types.length > 0">
               <div class="dot" *ngFor="let type of dayObj.types" [class.pink]="type === 'menstruation'"
                 [class.orange]="type === 'fertile'" [class.green]="type === 'ovulation'"
-                [class.blue]="type === 'reminder'" [class.purple]="type === 'note'">
+                [class.blue]="type === 'reminder'" [class.purple]="type === 'note'" [class.red]="type === 'symptom'">
               </div>
             </div>
           </div>
@@ -49,10 +49,31 @@
           <span>
             <div class="dot purple"></div> Anotação
           </span>
+          <span>
+            <div class="dot red"></div> Sintoma
+          </span>
         </div>
       </ion-card-content>
     </ion-card>
 
     <p class="hint-text">Toque em um dia para adicionar eventos</p>
+
+    <!-- Upcoming Reminders -->
+    <div *ngIf="upcomingReminders.length > 0" class="reminders-section">
+      <h3 class="section-title">Próximos lembretes</h3>
+      <ion-list class="reminders-list">
+        <ion-item *ngFor="let reminder of upcomingReminders" class="reminder-item" lines="none">
+          <div slot="start" class="reminder-icon">
+            <ion-icon name="alarm-outline"></ion-icon>
+          </div>
+          <ion-label>
+            <h2>{{ reminder.title }}</h2>
+            <p>{{ formatReminderDate(reminder.event_date) }}<span *ngIf="reminder.time"> &bull; {{ reminder.time
+                }}</span></p>
+            <p *ngIf="reminder.description" class="reminder-desc">{{ reminder.description }}</p>
+          </ion-label>
+        </ion-item>
+      </ion-list>
+    </div>
   </div>
 </ion-content>
